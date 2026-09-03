@@ -1,0 +1,14 @@
+c:\AppDev\Rentalin\bin\Debug\net10.0-windows\Rentalin.exe
+C:\AppDev\Rentalin\bin\Debug\net10.0-windows\Rentalin.deps.json
+C:\AppDev\Rentalin\bin\Debug\net10.0-windows\Rentalin.runtimeconfig.json
+c:\AppDev\Rentalin\bin\Debug\net10.0-windows\Rentalin.dll
+c:\AppDev\Rentalin\bin\Debug\net10.0-windows\Rentalin.pdb
+c:\AppDev\Rentalin\obj\Debug\net10.0-windows\Rentalin.GeneratedMSBuildEditorConfig.editorconfig
+c:\AppDev\Rentalin\obj\Debug\net10.0-windows\Rentalin.AssemblyInfoInputs.cache
+c:\AppDev\Rentalin\obj\Debug\net10.0-windows\Rentalin.AssemblyInfo.cs
+c:\AppDev\Rentalin\obj\Debug\net10.0-windows\Rentalin.csproj.CoreCompileInputs.cache
+c:\AppDev\Rentalin\obj\Debug\net10.0-windows\Rentalin.dll
+c:\AppDev\Rentalin\obj\Debug\net10.0-windows\refint\Rentalin.dll
+c:\AppDev\Rentalin\obj\Debug\net10.0-windows\Rentalin.pdb
+C:\AppDev\Rentalin\obj\Debug\net10.0-windows\Rentalin.genruntimeconfig.cache
+C:\AppDev\Rentalin\obj\Debug\net10.0-windows\ref\Rentalin.dll
