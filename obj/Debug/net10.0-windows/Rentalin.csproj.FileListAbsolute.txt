@@ -12,3 +12,11 @@ c:\AppDev\Rentalin\obj\Debug\net10.0-windows\refint\Rentalin.dll
 c:\AppDev\Rentalin\obj\Debug\net10.0-windows\Rentalin.pdb
 C:\AppDev\Rentalin\obj\Debug\net10.0-windows\Rentalin.genruntimeconfig.cache
 C:\AppDev\Rentalin\obj\Debug\net10.0-windows\ref\Rentalin.dll
+C:\AppDev\Rentalin\obj\Debug\net10.0-windows\Rentalin.sourcelink.json
+c:\AppDev\Rentalin\bin\Debug\net10.0-windows\images\logo.png
+c:\AppDev\Rentalin\bin\Debug\net10.0-windows\BCrypt-Net-Next.dll
+c:\AppDev\Rentalin\bin\Debug\net10.0-windows\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+c:\AppDev\Rentalin\bin\Debug\net10.0-windows\Microsoft.Extensions.Logging.Abstractions.dll
+c:\AppDev\Rentalin\bin\Debug\net10.0-windows\MySqlConnector.dll
+c:\AppDev\Rentalin\obj\Debug\net10.0-windows\Rentalin.csproj.AssemblyReference.cache
+C:\AppDev\Rentalin\obj\Debug\net10.0-windows\Rentalin.csproj.Up2Date
