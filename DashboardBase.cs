@@ -8,11 +8,6 @@ public abstract class DashboardBase : Form
     public bool LoggedOut { get; protected set; }
 }
 
-public class DashboardAdmin : StubDashboard
-{
-    public DashboardAdmin(string username) : base("Admin", username) { }
-}
-
 public class DashboardOwner : StubDashboard
 {
     public DashboardOwner(string username) : base("Owner", username) { }

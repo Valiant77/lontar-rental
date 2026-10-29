@@ -1,5 +1,6 @@
+using MySqlConnector;
 namespace Rentalin;
-record Car(string Name, string Color, int Seats, string Plate, string? ImagePath = null);
+record Car(int Id, string Name, string Color, int Seats, string Plate, int Price, bool Damaged, string Status, string? ImagePath);
 static class Theme
 {
     //dont mind us we are just a bunch of 'CSS imported to C#'
@@ -43,27 +44,36 @@ static class Theme
         b.MouseEnter += (s, e) => b.BackColor = DangerHover;
         b.MouseLeave += (s, e) => b.BackColor = Danger;
     }
+    public static void StyleDisabled(Button b)
+    {
+        b.FlatStyle = FlatStyle.Flat;
+        b.FlatAppearance.BorderSize = 0;
+        b.BackColor = Color.FromArgb(238, 240, 243);
+        b.Font = new Font("Segoe UI Semibold", 10f);
+        b.Enabled = false;
+    }
 }
 
-public partial class DashboardKasir : DashboardBase
+public partial class DashboardCashier : DashboardBase
 {
-readonly string username;
+    List<Car> allCars = new();
+    readonly string name;
     readonly Label greetingLabel;
     readonly FlowLayoutPanel carGrid;
     readonly Control carsPage;
-    readonly ReturnPage returnPage;
-    readonly BorrowPage borrowPage;
+    readonly ReturnAsCashier returnAsCashier;
+    readonly Peminjaman peminjaman;
     readonly Button navCars;
     readonly Button navReturn;
 
-    public DashboardKasir(string username) {
-        this.username = username;
+    public DashboardCashier(string name) {
+        this.name = name;
         AutoScaleMode = AutoScaleMode.Font;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
         MinimizeBox = true;
         WindowState = FormWindowState.Maximized;
-        Text = "Dashboard Kasir | " + username;
+        Text = "Dashboard Kasir | " + name;
         BackColor = Theme.Background;
         Font = new Font("Segoe UI", 10f);
         ForeColor = Theme.TextDark;
@@ -164,23 +174,23 @@ readonly string username;
         carsPage = carsLayout;
         
         //ALL PEMINJAMAN STUFF
-        borrowPage = new BorrowPage { Visible = false };
-        borrowPage.Cancelled += () => ShowPage(carsPage);
-        borrowPage.Finished += () => ShowPage(carsPage);
+        peminjaman = new Peminjaman(name) { Visible = false };
+        peminjaman.Cancelled += () => ShowPage(carsPage);
+        peminjaman.Finished += () => ShowPage(carsPage);
         //ALL PENGEMBALIAN STUFF
-        returnPage = new ReturnPage { Visible = false };
-        returnPage.BackRequested += () => ShowPage(carsPage);
+        returnAsCashier = new ReturnAsCashier { Visible = false };
+        returnAsCashier.BackRequested += () => ShowPage(carsPage);
 
         var content = new Panel {
             Dock = DockStyle.Fill,
             Padding = new Padding(20, 15, 20, 20)
         };
         content.Controls.Add(carsPage);
-        content.Controls.Add(borrowPage);
-        content.Controls.Add(returnPage);
+        content.Controls.Add(peminjaman);
+        content.Controls.Add(returnAsCashier);
 
         navCars.Click += (s, e) => ShowPage(carsPage);
-        navReturn.Click += (s, e) => ShowPage(returnPage);
+        navReturn.Click += (s, e) => ShowPage(returnAsCashier);
         ShowPage(carsPage);
 
         root.Controls.Add(navbar, 0, 0);
@@ -193,23 +203,9 @@ readonly string username;
         timer.Tick += (s, e) => UpdateGreeting();
         timer.Start();
         FormClosed += (s, e) => timer.Dispose();
-
-        var cars = new List<Car> {
-            new("Blista Compact 2003", "Biru", 4, $"B {Random.Shared.Next(1000, 10000)} BTC"),
-            new("Obey Tailgater 1998", "Biru", 4, $"B {Random.Shared.Next(1000, 10000)} BTC"),
-            new("Modo Dominico 2014", "Merah", 4, $"B {Random.Shared.Next(1000, 10000)} BTC"),
-            new("Baloney X845", "Hitam", 4, $"B {Random.Shared.Next(1000, 10000)} BTC"),
-            new("Osterreich Classic", "Putih", 4, $"B {Random.Shared.Next(1000, 10000)} BTC"),
-            new("Caperoni Pecorino", "Biru", 4, $"B {Random.Shared.Next(1000, 10000)} BTC"),
-            new("Blista Compact 2003", "Biru", 4, $"B {Random.Shared.Next(1000, 10000)} BTC"),
-            new("Obey Tailgater 1998", "Biru", 4, $"B {Random.Shared.Next(1000, 10000)} BTC"),
-            new("Modo Dominico 2014", "Merah", 4, $"B {Random.Shared.Next(1000, 10000)} BTC"),
-            new("Baloney X845", "Hitam", 4, $"B {Random.Shared.Next(1000, 10000)} BTC"),
-            new("Osterreich Classic", "Putih", 4, $"B {Random.Shared.Next(1000, 10000)} BTC"),
-            new("Caperoni Pecorino", "Biru", 4, $"B {Random.Shared.Next(1000, 10000)} BTC"),
-        };
-        Shown += (s, e) => RenderCars(cars);
+        Shown += (s, e) => LoadCars();
     }
+    
     static Button MakeNavButton(string text) {
         var b = new Button {
             Text = text,
@@ -224,10 +220,10 @@ readonly string username;
     }
     void ShowPage(Control page) {
         carsPage.Visible = page == carsPage;
-        returnPage.Visible = page == returnPage;
-        borrowPage.Visible = page == borrowPage;
-        SetActive(navCars, page == carsPage || page == borrowPage);
-        SetActive(navReturn, page == returnPage);
+        returnAsCashier.Visible = page == returnAsCashier;
+        peminjaman.Visible = page == peminjaman;
+        SetActive(navCars, page == carsPage || page == peminjaman);
+        SetActive(navReturn, page == returnAsCashier);
     }
 
     static void SetActive(Button b, bool active) {
@@ -242,7 +238,19 @@ readonly string username;
             < 18 => "Sore",
             _ => "Malam"
         };
-        greetingLabel.Text = $"Selamat {sapaan}, {username}\n{now:dd/MM/yyyy, HH:mm}";
+        greetingLabel.Text = $"Selamat {sapaan}, {name}\n{now:dd/MM/yyyy, HH:mm}";
+    }
+    void LoadCars()
+    {
+        try
+        {
+            allCars = Db.LoadCars();
+            RenderCars(allCars);
+        }
+        catch (MySqlException ex)
+        {
+            MessageBox.Show("Gagal memuat data mobil:\n" + ex.Message);
+        }
     }
     void RenderCars(IEnumerable<Car> cars) {
         carGrid.SuspendLayout();
@@ -275,17 +283,34 @@ readonly string username;
                 SizeMode = PictureBoxSizeMode.Zoom,
                 BackColor = Color.FromArgb(238, 240, 243)
             };
-            if (car.ImagePath != null && File.Exists(car.ImagePath))
-                picture.Image = Image.FromFile(car.ImagePath);
+            string imgFile = Path.Combine(AppContext.BaseDirectory, car.ImagePath ?? "");
+            if (!string.IsNullOrWhiteSpace(car.ImagePath) && File.Exists(imgFile))
+                picture.Image = Image.FromFile(imgFile);
 
+            var nameRow = new Panel { Dock = DockStyle.Top, Height = 34 };
             var name = new Label {
-                Dock = DockStyle.Top,
-                Height = 34,
+                Dock = DockStyle.Fill,
                 Text = car.Name,
                 Font = new Font("Segoe UI Semibold", 11f),
                 AutoEllipsis = true,
                 TextAlign = ContentAlignment.BottomLeft
             };
+            nameRow.Controls.Add(name);
+
+            if (car.Damaged)
+            {
+                var tagFont = new Font("Segoe UI Semibold", 11f);   // same as the name
+                var tag = new Label {
+                    Dock = DockStyle.Right,
+                    AutoSize = false,
+                    Width = TextRenderer.MeasureText("Damaged", tagFont).Width + 8,
+                    Text = "Damaged",
+                    ForeColor = Theme.Danger,
+                    Font = tagFont,
+                    TextAlign = ContentAlignment.BottomRight
+                };
+                nameRow.Controls.Add(tag);
+            }
 
             var details = new Label {
                 Dock = DockStyle.Fill,
@@ -296,17 +321,37 @@ readonly string username;
 
             var borrow = new Button {
                 Dock = DockStyle.Bottom,
-                Height = 38,
-                Text = "Pinjam"
-            };
-            Theme.StylePrimary(borrow);
-            borrow.Click += (s, e) => {
-                borrowPage.Start(car);
-                ShowPage(borrowPage);
+                Height = 38
             };
 
+            if (car.Status == "tersedia") //look yeah i know it is convoluted but shut up
+            {
+                borrow.Text = "Pinjam";
+                Theme.StylePrimary(borrow);
+                borrow.Click += (s, e) => {
+                    if (car.Damaged)
+                    {
+                        var answer = MessageBox.Show(
+                            $"{car.Name} ({car.Plate}) berstatus rusak.\n\n" + "Beritahu penyewa kondisi kendaraan sebelum melanjutkan.\n" + "Tetap pinjamkan?",
+                            "Mobil Rusak",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning,
+                            MessageBoxDefaultButton.Button2); //"No" is the default, so a stray Enter cancels
+
+                        if (answer != DialogResult.Yes) return;
+                    }
+                    peminjaman.Start(car);
+                    ShowPage(peminjaman);
+                };
+            }
+            else
+            {
+                borrow.Text = car.Status == "dipinjam" ? "Sedang Dipinjam" : "Tidak Tersedia";
+                Theme.StyleDisabled(borrow);
+            }
+
             card.Controls.Add(details);
-            card.Controls.Add(name);
+            card.Controls.Add(nameRow);
             card.Controls.Add(picture);
             card.Controls.Add(borrow);
 

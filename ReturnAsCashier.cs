@@ -4,7 +4,7 @@ namespace Rentalin;
 
 record Loan(string Invoice, string Vehicle, string Plate, string Borrower, string Birth, string Address, string Cashier, DateTime LoanDate, DateTime DueDate, decimal Total);
 
-class ReturnPage : UserControl
+class ReturnAsCashier : UserControl
 {
     static readonly CultureInfo Id = new("id-ID");
     const decimal FinePerDay = 35_000m;
@@ -31,7 +31,7 @@ class ReturnPage : UserControl
 
     public event Action? BackRequested;
 
-    public ReturnPage()
+    public ReturnAsCashier()
     {
         Dock = DockStyle.Fill;
         var card = new Panel {

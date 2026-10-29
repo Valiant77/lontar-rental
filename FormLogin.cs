@@ -12,7 +12,7 @@ public partial class FormLogin : Form
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
-        Text = "Login";
+        Text = "Login LontarRental";
         BackColor = Theme.Background;
         Font = new Font("Segoe UI", 10f);
         ForeColor = Theme.TextDark;
@@ -146,7 +146,7 @@ public partial class FormLogin : Form
     static DashboardBase? CreateDashboard(string name, string role)
     {
         return role.Trim().ToLowerInvariant() switch {
-            "cashier" => new DashboardKasir(name),
+            "cashier" => new DashboardCashier(name),
             "admin" => new DashboardAdmin(name),
             "owner" => new DashboardOwner(name),
             _ => null
