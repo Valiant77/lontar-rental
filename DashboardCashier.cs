@@ -62,7 +62,7 @@ public partial class DashboardCashier : DashboardBase
     readonly FlowLayoutPanel carGrid;
     readonly Control carsPage;
     readonly ReturnAsCashier returnAsCashier;
-    readonly Peminjaman peminjaman;
+    readonly RentAsCashier rentAsCashier;
     readonly Button navCars;
     readonly Button navReturn;
 
@@ -174,19 +174,20 @@ public partial class DashboardCashier : DashboardBase
         carsPage = carsLayout;
         
         //ALL PEMINJAMAN STUFF
-        peminjaman = new Peminjaman(name) { Visible = false };
-        peminjaman.Cancelled += () => ShowPage(carsPage);
-        peminjaman.Finished += () => ShowPage(carsPage);
+        rentAsCashier = new RentAsCashier(name) { Visible = false };
+        rentAsCashier.Cancelled += () => ShowPage(carsPage);
+        rentAsCashier.Finished += () => { LoadCars(); ShowPage(carsPage); };
         //ALL PENGEMBALIAN STUFF
         returnAsCashier = new ReturnAsCashier { Visible = false };
         returnAsCashier.BackRequested += () => ShowPage(carsPage);
+        returnAsCashier.Completed += () => { LoadCars(); ShowPage(carsPage); };
 
         var content = new Panel {
             Dock = DockStyle.Fill,
             Padding = new Padding(20, 15, 20, 20)
         };
         content.Controls.Add(carsPage);
-        content.Controls.Add(peminjaman);
+        content.Controls.Add(rentAsCashier);
         content.Controls.Add(returnAsCashier);
 
         navCars.Click += (s, e) => ShowPage(carsPage);
@@ -221,8 +222,8 @@ public partial class DashboardCashier : DashboardBase
     void ShowPage(Control page) {
         carsPage.Visible = page == carsPage;
         returnAsCashier.Visible = page == returnAsCashier;
-        peminjaman.Visible = page == peminjaman;
-        SetActive(navCars, page == carsPage || page == peminjaman);
+        rentAsCashier.Visible = page == rentAsCashier;
+        SetActive(navCars, page == carsPage || page == rentAsCashier);
         SetActive(navReturn, page == returnAsCashier);
     }
 
@@ -340,8 +341,8 @@ public partial class DashboardCashier : DashboardBase
 
                         if (answer != DialogResult.Yes) return;
                     }
-                    peminjaman.Start(car);
-                    ShowPage(peminjaman);
+                    rentAsCashier.Start(car);
+                    ShowPage(rentAsCashier);
                 };
             }
             else

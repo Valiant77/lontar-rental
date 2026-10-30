@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Rentalin")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2e96388c943048d98db73b592f353b415704c0cc")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4986fc574596a261ec00d78f77a66a4cc93ee8b9")]
 [assembly: System.Reflection.AssemblyProductAttribute("Rentalin")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Rentalin")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

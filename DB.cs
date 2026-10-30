@@ -11,6 +11,23 @@ static class Db
         conn.Open();
         return conn;
     }
+    public static void Log(MySqlConnection conn, MySqlTransaction? tx, string action, string? targetType = null, int? targetId = null, string? details = null)
+    {
+        using var cmd = new MySqlCommand(
+            @"INSERT INTO activity_log (user_id, action, target_type, target_id, details)
+            VALUES (@u, @a, @tt, @ti, @d)", conn, tx);
+        cmd.Parameters.AddWithValue("@u", Session.UserId == 0 ? DBNull.Value : (object)Session.UserId);
+        cmd.Parameters.AddWithValue("@a", action);
+        cmd.Parameters.AddWithValue("@tt", (object?)targetType ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@ti", (object?)targetId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@d", (object?)details ?? DBNull.Value);
+        cmd.ExecuteNonQuery();
+    }
+    public static void Log(string action, string? targetType = null, int? targetId = null, string? details = null)
+    {
+        using var conn = Open();
+        Log(conn, null, action, targetType, targetId, details);
+    }
     public static DataTable Query(string sql)
     {
         using var conn = Open();

@@ -1,7 +1,7 @@
 namespace Rentalin;
-//TODO: dont forget to replace these placeholders with the real deal
+using MySqlConnector;
 
-class Peminjaman : UserControl
+class RentAsCashier : UserControl
 {
     static readonly string[] StepTitles = {
         "Identitas Penyewa",
@@ -26,7 +26,7 @@ class Peminjaman : UserControl
     public event Action? Finished;
     public event Action? Cancelled;
 
-    public Peminjaman(string cashierName)
+    public RentAsCashier(string cashierName)
     {
         this.cashierName = cashierName;
         Dock = DockStyle.Fill;
@@ -69,11 +69,8 @@ class Peminjaman : UserControl
         identity = new Identity();
         documents = new Documents();
         summary = new Summary();
-        steps = new Control[] {
-            identity,
-            documents,
-            summary
-        };
+        summary.FinishRequested += OnFinish;
+        steps = new Control[] { identity, documents, summary };
         foreach (var s in steps) body.Controls.Add(s);
 
         backButton = new Button {
@@ -168,14 +165,30 @@ class Peminjaman : UserControl
     }
     void OnFinish()
     {
-        var terms = summary.GetTerms();
+        if (car == null || renter == null || docs == null)
+        {
+            MessageBox.Show("Data peminjaman belum lengkap.", "Gagal");
+            return;
+        }
 
-        //TODO: database, in ONE transaction:
-        //1. insert the renter
-        //2. copy the KTP/SIM files into the app's storage, save those paths
-        //3. insert the loan (car.Id, renter, cashier, terms, invoice code)
-        //4. UPDATE cars SET status = 'dipinjam' WHERE id = @id
-        MessageBox.Show($"Transaksi selesai (placeholder).\nTotal: Rp{terms.Total:N0}");
-        Finished?.Invoke();
+        try
+        {
+            string invoice = RentalService.Create(car, renter, docs, summary.GetTerms());
+            MessageBox.Show($"Transaksi selesai.\nKode invoice: {invoice}", "Berhasil",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Finished?.Invoke();   // the dashboard reloads the car list
+        }
+        catch (RentalException ex)
+        {
+            MessageBox.Show(ex.Message, "Gagal", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        catch (MySqlException ex)
+        {
+            MessageBox.Show("Gagal menyimpan ke database:\n" + ex.Message);
+        }
+        catch (IOException ex)
+        {
+            MessageBox.Show("Gagal menyalin dokumen:\n" + ex.Message);
+        }
     }
 }

@@ -100,20 +100,38 @@ public partial class FormLogin : Form
             try
             {
                 using var conn = Db.Open();
-                using var cmd = new MySqlCommand("SELECT role, name FROM users WHERE username = @u LIMIT 1", conn);
+                using var cmd = new MySqlCommand("SELECT id, name, password, role FROM users WHERE username = @u LIMIT 1", conn);
                 cmd.Parameters.AddWithValue("@u", username);
 
-                using var reader = cmd.ExecuteReader();
-                if (!reader.Read())
+                int userId;
+                string name, hash, role;
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (!reader.Read())
+                    {
+                        MessageBox.Show("Salah username atau password", "Gagal");
+                        return;
+                    }
+                    userId = reader.GetInt32("id");
+                    name = reader.GetString("name");
+                    hash = reader.GetString("password");
+                    role = reader.GetString("role");
+                }
+                bool ok;
+                try
+                {
+                    ok = BCrypt.Net.BCrypt.Verify(passwordBox.Text, hash);
+                }
+                catch (BCrypt.Net.SaltParseException)
+                {
+                    ok = false;
+                }
+
+                if (!ok)
                 {
                     MessageBox.Show("Salah username atau password", "Gagal");
                     return;
                 }
-                string name = reader["name"].ToString() ?? "";
-                string role = reader["role"].ToString() ?? "";
-
-                //TODO: verify the password once hashing is in place:
-                //SELECT password, role ... then BCrypt.Net.BCrypt.Verify(passwordBox.Text, hash)
 
                 var dashboard = CreateDashboard(name, role);
                 if (dashboard == null)
@@ -122,7 +140,11 @@ public partial class FormLogin : Form
                     return;
                 }
 
+                Session.Start(userId, name, role);
+                Db.Log("login");
+
                 dashboard.FormClosed += (s2, e2) => {
+                    Session.End();
                     if (dashboard.LoggedOut)
                     {
                         usernameBox.Clear();

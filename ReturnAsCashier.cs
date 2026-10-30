@@ -1,26 +1,15 @@
 using System.Globalization;
-
+using MySqlConnector;
 namespace Rentalin;
 
-record Loan(string Invoice, string Vehicle, string Plate, string Borrower, string Birth, string Address, string Cashier, DateTime LoanDate, DateTime DueDate, decimal Total);
+record Loan(int Id, int CarId, string Invoice, string Vehicle, string Plate,
+            string Borrower, string Birth, string Address, string Cashier,
+            DateTime LoanDate, DateTime DueDate, int PricePerDay, int Total,
+            DateTime? ReturnedAt);
 
 class ReturnAsCashier : UserControl
 {
     static readonly CultureInfo Id = new("id-ID");
-    const decimal FinePerDay = 35_000m;
-
-    // dummy data until the database is hooked up
-    static readonly Dictionary<string, Loan> loans = new(StringComparer.OrdinalIgnoreCase) {
-        ["ADRTH37678628"] = new("ADRTH37678628", "Blista Compact 2003, Biru", "SU4KM4D13",
-            "Evelina Logunova", "Vorkuta-5, 19/06/1974",
-            "Jalan Huniara, Danau Havasu, Arizona, Amerika Serikat",
-            "Adolphe Plamondon", new DateTime(2026, 9, 23), new DateTime(2026, 10, 3), 277_500m),
-        // not late yet, for testing the no-fine case
-        ["ADRTH00000001"] = new("ADRTH00000001", "Obey Tailgater 1998, Biru", "B 4821 BTC",
-            "Test Peminjam", "Jakarta, 01/01/1990", "Jalan Contoh No. 1, Jakarta",
-            "Kasir3485", DateTime.Today.AddDays(-3), DateTime.Today.AddDays(2), 150_000m),
-    };
-
     readonly TextBox invoiceBox;
     readonly Label errorLabel;
     readonly Label leftInfo;
@@ -30,6 +19,7 @@ class ReturnAsCashier : UserControl
     Loan? current;
 
     public event Action? BackRequested;
+    public event Action? Completed;
 
     public ReturnAsCashier()
     {
@@ -79,7 +69,7 @@ class ReturnAsCashier : UserControl
         };
         invoiceBox.KeyDown += (s, e) => {
             if (e.KeyCode == Keys.Enter) {
-                e.SuppressKeyPress = true;   // no "ding"
+                e.SuppressKeyPress = true;   //no "ding"
                 Lookup();
             }
         };
@@ -148,12 +138,28 @@ class ReturnAsCashier : UserControl
     void Lookup()
     {
         string code = invoiceBox.Text.Trim();
-        if (!loans.TryGetValue(code, out var loan))
+
+        current = null;
+        details.Visible = false;
+        approveButton.Visible = false;
+
+        if (code.Length == 0) { errorLabel.Text = ""; return; }
+
+        Loan? loan;
+        try
         {
-            current = null;
-            details.Visible = false;
-            approveButton.Visible = false;
-            errorLabel.Text = code.Length == 0 ? "" : "Invoice tidak ditemukan.";
+            loan = RentalService.Find(code);
+        }
+        catch (MySqlException ex)
+        {
+            errorLabel.Text = "Gagal membaca database: " + ex.Message;
+            return;
+        }
+
+        if (loan == null) { errorLabel.Text = "Invoice tidak ditemukan."; return; }
+        if (loan.ReturnedAt != null)
+        {
+            errorLabel.Text = $"Invoice ini sudah dikembalikan pada {loan.ReturnedAt:dd/MM/yyyy}.";
             return;
         }
 
@@ -161,8 +167,8 @@ class ReturnAsCashier : UserControl
         errorLabel.Text = "";
 
         var today = DateTime.Today;
-        int late = Math.Max(0, (today - loan.DueDate.Date).Days);
-        decimal fine = late * FinePerDay;
+        int late = RentalService.LateDays(loan.DueDate, today);
+        int fine = RentalService.Fine(loan.PricePerDay, late);
 
         leftInfo.Text =
             $"Kendaraan: {loan.Vehicle}\n" +
@@ -187,16 +193,27 @@ class ReturnAsCashier : UserControl
     void Approve()
     {
         if (current == null) return;
-
         var answer = MessageBox.Show(
             $"Setujui pengembalian {current.Vehicle} ({current.Plate})?",
             "Konfirmasi", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         if (answer != DialogResult.Yes) return;
 
-        // TODO: database: mark the loan as returned, make the car available, save the fine
-        MessageBox.Show("Pengembalian berhasil disimpan.");
-        Reset();
-        BackRequested?.Invoke();
+        try
+        {
+            int fine = RentalService.Return(current);
+            MessageBox.Show($"Pengembalian berhasil disimpan.\nDenda: {Rp(fine)}", "Berhasil",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Reset();
+            Completed?.Invoke();
+        }
+        catch (RentalException ex)
+        {
+            MessageBox.Show(ex.Message, "Gagal", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        catch (MySqlException ex)
+        {
+            MessageBox.Show("Gagal menyimpan ke database:\n" + ex.Message);
+        }
     }
 
     void Reset()

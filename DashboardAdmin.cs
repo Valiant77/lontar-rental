@@ -32,12 +32,19 @@ public class DashboardAdmin : DashboardBase
         carsPage = new DataPage("Cari mobil...");
         usersPage = new DataPage("Cari pengguna...") { Visible = false };
 
-        // placeholders until the forms exist
+        //placeholders until the forms exist
         carsPage.AddRequested += () => MessageBox.Show("Tambah mobil: TBA");
         carsPage.EditRequested += id => MessageBox.Show($"Edit mobil #{id}: TBA");
         carsPage.DeleteRequested += id => MessageBox.Show($"Hapus mobil #{id}: TBA");
-        usersPage.AddRequested += () => MessageBox.Show("Tambah pengguna: TBA");
-        usersPage.EditRequested += id => MessageBox.Show($"Edit pengguna #{id}: TBA");
+
+        usersPage.AddRequested += () => {
+            using var form = new UserForm();
+            if (form.ShowDialog(this) == DialogResult.OK) LoadUsers();
+        };
+        usersPage.EditRequested += id => {
+            using var form = new UserForm(id);
+            if (form.ShowDialog(this) == DialogResult.OK) LoadUsers();
+        };
         usersPage.DeleteRequested += id => MessageBox.Show($"Hapus pengguna #{id}: TBA");
 
         var content = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20, 15, 20, 20) };
