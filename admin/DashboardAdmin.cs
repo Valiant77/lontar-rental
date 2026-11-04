@@ -7,6 +7,7 @@ public class DashboardAdmin : DashboardBase
     readonly Navbar nav;
     readonly DataPage carsPage;
     readonly DataPage usersPage;
+    readonly CarForm carForm;
 
     public DashboardAdmin(string name)
     {
@@ -28,13 +29,17 @@ public class DashboardAdmin : DashboardBase
         nav = new Navbar(name, "Mobil", "Pengguna");
         nav.ItemClicked += ShowPage;
         nav.LogoutClicked += () => { LoggedOut = true; Close(); };
+        
+        carForm = new CarForm { Visible = false };
+        carForm.Cancelled += () => ShowPage(0);
+        carForm.Saved += () => { LoadCars(); ShowPage(0); };
 
         carsPage = new DataPage("Cari mobil...");
         usersPage = new DataPage("Cari pengguna...") { Visible = false };
 
         //placeholders until the forms exist
-        carsPage.AddRequested += () => MessageBox.Show("Tambah mobil: TBA");
-        carsPage.EditRequested += id => MessageBox.Show($"Edit mobil #{id}: TBA");
+        carsPage.AddRequested += () => OpenCarForm(null);
+        carsPage.EditRequested += id => OpenCarForm(id);
         carsPage.DeleteRequested += id => MessageBox.Show($"Hapus mobil #{id}: TBA");
 
         usersPage.AddRequested += () => {
@@ -50,6 +55,7 @@ public class DashboardAdmin : DashboardBase
         var content = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20, 15, 20, 20) };
         content.Controls.Add(carsPage);
         content.Controls.Add(usersPage);
+        content.Controls.Add(carForm);
 
         root.Controls.Add(nav, 0, 0);
         root.Controls.Add(content, 0, 1);
@@ -61,9 +67,19 @@ public class DashboardAdmin : DashboardBase
 
     void ShowPage(int index)
     {
+        carForm.Visible = false;
         carsPage.Visible = index == 0;
         usersPage.Visible = index == 1;
         nav.SetActive(index);
+    }
+
+    void OpenCarForm(int? id)
+    {
+        carForm.Open(id);
+        carsPage.Visible = false;
+        usersPage.Visible = false;
+        carForm.Visible = true;
+        nav.SetActive(0);
     }
 
     void LoadCars()
